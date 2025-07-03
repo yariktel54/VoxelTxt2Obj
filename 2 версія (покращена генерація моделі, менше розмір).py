@@ -47,27 +47,24 @@ def cube_to_obj_optimized(cube, filename="optimized.obj"):
                 if cube[x, y, z] == 0:
                     continue
 
-                # LEFT (-X)
+                if x == 0 or cube[x-1, y, z] == 0:
+                    add_face((x, y, z), (x, y, z+1), (x, y+1, z+1), (x, y+1, z))
+
+                if x == sx-1 or cube[x+1, y, z] == 0:
+                    add_face((x+1, y, z), (x+1, y+1, z), (x+1, y+1, z+1), (x+1, y, z+1))
+
                 if x == 0 or cube[x-1, y, z] == 0:
                     add_face((x, y, z), (x, y+1, z), (x, y+1, z+1), (x, y, z+1))
 
-                # RIGHT (+X)
-                if x == sx-1 or cube[x+1, y, z] == 0:
-                    add_face((x+1, y, z), (x+1, y, z+1), (x+1, y+1, z+1), (x+1, y+1, z))
-
-                # BOTTOM (-Y)
                 if y == 0 or cube[x, y-1, z] == 0:
                     add_face((x, y, z), (x+1, y, z), (x+1, y, z+1), (x, y, z+1))
 
-                # TOP (+Y)
                 if y == sy-1 or cube[x, y+1, z] == 0:
                     add_face((x, y+1, z), (x, y+1, z+1), (x+1, y+1, z+1), (x+1, y+1, z))
 
-                # BACK (-Z)
                 if z == 0 or cube[x, y, z-1] == 0:
                     add_face((x, y, z), (x, y+1, z), (x+1, y+1, z), (x+1, y, z))
 
-                # FRONT (+Z)
                 if z == sz-1 or cube[x, y, z+1] == 0:
                     add_face((x, y, z+1), (x+1, y, z+1), (x+1, y+1, z+1), (x, y+1, z+1))
 

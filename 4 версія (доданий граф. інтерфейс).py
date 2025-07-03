@@ -49,10 +49,13 @@ def cube_to_obj_streaming(cube, filename, chunk_size, progress_callback=None):
                             continue
 
                         if x == 0 or cube[x-1, y, z] == 0:
-                            add_face((x, y, z), (x, y+1, z), (x, y+1, z+1), (x, y, z+1))
+                            add_face((x, y, z), (x, y, z+1), (x, y+1, z+1), (x, y+1, z))
 
                         if x == sx-1 or cube[x+1, y, z] == 0:
-                            add_face((x+1, y, z), (x+1, y, z+1), (x+1, y+1, z+1), (x+1, y+1, z))
+                            add_face((x+1, y, z), (x+1, y+1, z), (x+1, y+1, z+1), (x+1, y, z+1))
+
+                        if x == 0 or cube[x-1, y, z] == 0:
+                            add_face((x, y, z), (x, y+1, z), (x, y+1, z+1), (x, y, z+1))
 
                         if y == 0 or cube[x, y-1, z] == 0:
                             add_face((x, y, z), (x+1, y, z), (x+1, y, z+1), (x, y, z+1))
@@ -109,7 +112,7 @@ def main():
     tk.Label(root, text="Розмір чанку:").grid(row=1, column=0, sticky="w", padx=5, pady=5)
     entry_chunk = tk.Entry(root, width=10)
     entry_chunk.grid(row=1, column=1, sticky="w", padx=5, pady=5)
-    entry_chunk.insert(0, "10")  # мінімальний за замовчуванням
+    entry_chunk.insert(0, "1")  # мінімальний за замовчуванням
 
     progress_label = tk.Label(root, text="Очікування...")
     progress_label.grid(row=2, column=0, columnspan=3, padx=5, pady=10)
