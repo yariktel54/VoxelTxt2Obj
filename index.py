@@ -3,24 +3,32 @@ from tkinter import filedialog, messagebox
 import threading
 import numpy as np
 
-def read_cube_from_file(filename, z_limit=None):
+def read_cube_from_file(filename, y_start=0, y_stop=None):
     with open(filename, 'r') as f:
         lines = [line.strip() for line in f if line.strip()]
 
-    layer_size = len(lines[0].split())
-    total_layers = len(lines) // layer_size
-    if z_limit is not None:
-        total_layers = min(total_layers, z_limit)
+    line_len = len(lines[0].split())
+    total_lines = len(lines)
+    total_layers = total_lines // line_len
 
-    cube = np.zeros((layer_size, layer_size, total_layers), dtype=int)
+    if y_start < 0 or y_start is None:
+        y_start = 0
+    if y_stop is None or y_stop > line_len:
+        y_stop = line_len
+    if y_stop <= y_start:
+        raise ValueError("y_stop має бути більше за y_start")
+
+    height = y_stop - y_start
+    cube = np.zeros((line_len, height, total_layers), dtype=int)
 
     for z in range(total_layers):
-        for y in range(layer_size):
-            line = lines[z * layer_size + y]
+        for y in range(y_start, y_stop):
+            line = lines[z * line_len + y]
             parts = line.split()
             for x, char in enumerate(parts):
-                cube[x, y, z] = int(char)
+                cube[x, y - y_start, z] = int(char)
     return cube
+
 
 def cube_to_obj_optimized_merge(cube, filename, progress_callback=None, invert=False):
     if invert:
@@ -185,15 +193,20 @@ def cube_to_obj_optimized_merge(cube, filename, progress_callback=None, invert=F
         if progress_callback:
             progress_callback("Готово!")
 
-def start_conversion(filepath, z_limit_raw, invert, progress_label, button):
+def start_conversion(filepath, y_start_raw, y_stop_raw, invert, progress_label, button):
     def task():
         try:
             try:
-                z_limit = int(z_limit_raw)
+                y_start = int(y_start_raw) if y_start_raw.strip() else 0
             except ValueError:
-                z_limit = None  # якщо поле порожнє або не число
+                y_start = 0
+            try:
+                y_stop = int(y_stop_raw) if y_stop_raw.strip() else None
+            except ValueError:
+                y_stop = None
+
             progress_label.config(text="Зчитування файлу...")
-            cube = read_cube_from_file(filepath, z_limit)
+            cube = read_cube_from_file(filepath, y_start=y_start, y_stop=y_stop)
             progress_label.config(text=f"Файл зчитано. Розмір куба: {cube.shape}")
             obj_filename = filepath.rsplit('.', 1)[0] + ".obj"
             progress_label.config(text="Початок генерації OBJ...")
@@ -206,6 +219,7 @@ def start_conversion(filepath, z_limit_raw, invert, progress_label, button):
 
     button.config(state=tk.DISABLED)
     threading.Thread(target=task).start()
+
 
 def browse_file(entry):
     filepath = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
@@ -223,9 +237,13 @@ def main():
     btn_browse = tk.Button(root, text="Вибрати файл", command=lambda: browse_file(entry_path))
     btn_browse.grid(row=0, column=2, padx=5, pady=5)
 
-    tk.Label(root, text="Кількість шарів Z (опц.):").grid(row=2, column=0, sticky="w", padx=5, pady=5)
-    entry_z_limit = tk.Entry(root, width=10)
-    entry_z_limit.grid(row=2, column=1, sticky="w", padx=5, pady=5)
+    tk.Label(root, text="Початковий шар Y (опц.):").grid(row=1, column=0, sticky="w", padx=5, pady=5)
+    entry_y_start = tk.Entry(root, width=10)
+    entry_y_start.grid(row=1, column=1, sticky="w", padx=5, pady=5)
+
+    tk.Label(root, text="Останній шар Y (опц.):").grid(row=2, column=0, sticky="w", padx=5, pady=5)
+    entry_y_stop = tk.Entry(root, width=10)
+    entry_y_stop.grid(row=2, column=1, sticky="w", padx=5, pady=5)
 
     invert_var = tk.BooleanVar()
     chk_invert = tk.Checkbutton(root, text="Інвертувати модель (показати пустоти)", variable=invert_var)
@@ -238,7 +256,8 @@ def main():
     btn_start = tk.Button(root, text="Запустити конвертацію",
         command=lambda: start_conversion(
             entry_path.get(),
-            entry_z_limit.get(),
+            entry_y_start.get(),
+            entry_y_stop.get(),
             invert_var.get(),
             progress_label,
             btn_start
